@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"strconv"
 
 	"github.com/cnnrznn/comment/comment"
 )
@@ -49,7 +50,8 @@ func parseComment(req *http.Request) (c comment.Comment, err error) {
 }
 
 func (s *CommentServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	switch req.URL.String() {
+	log.Println(req.URL.Path)
+	switch req.URL.Path {
 	case url_new:
 		com, err := parseComment(req)
 		if err != nil {
@@ -61,8 +63,20 @@ func (s *CommentServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			// TODO return success message
 		}
 	case url_list:
-		key := req.URL.Query()["comment_id"]
-		log.Println("Key:", key)
+		key, err := strconv.Atoi(req.URL.Query()["comment_id"][0])
+		if err != nil {
+			// TODO return error
+			return
+		}
+
+		if obj, ok := s.tree[key]; ok {
+			bytes, err := json.Marshal(obj)
+			if err != nil {
+				log.Println("Marshal-ing comment:", err)
+				return
+			}
+			w.Write(bytes)
+		}
 	}
 }
 
@@ -78,8 +92,11 @@ func (s *CommentServer) New(c comment.Comment) {
 	c.Id = newId
 	c.Score = 1
 
-	s.tree[newId] = &c
 	if _, ok := s.tree[c.Parent]; ok {
 		s.tree[c.Parent].AddChild(&c)
+	} else {
+		c.Parent = -1
 	}
+
+	s.tree[newId] = &c
 }
