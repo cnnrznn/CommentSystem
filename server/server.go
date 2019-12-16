@@ -26,12 +26,12 @@ func main() {
 }
 
 type CommentServer struct {
-	tree map[int]comment.Comment
+	tree map[int]*comment.Comment
 }
 
 func NewCommentServer() *CommentServer {
 	cs := CommentServer{
-		tree: make(map[int]comment.Comment),
+		tree: make(map[int]*comment.Comment),
 	}
 
 	return &cs
@@ -72,12 +72,14 @@ func (s *CommentServer) New(c comment.Comment) {
 		if _, ok := s.tree[newId]; !ok {
 			break
 		}
-
 		newId = rand.Int()
 	}
 
 	c.Id = newId
 	c.Score = 1
 
-	s.tree[newId] = c
+	s.tree[newId] = &c
+	if _, ok := s.tree[c.Parent]; ok {
+		s.tree[c.Parent].AddChild(&c)
+	}
 }
