@@ -14,7 +14,7 @@ import (
 const (
 	url_comment      string = "http://localhost:8888/Comment"
 	url_comment_new  string = url_comment + "/New"
-	url_comment_list string = url_comment + "/List"
+	url_comment_list string = url_comment + "/List?comment_id=0"
 )
 
 func reqEndpoint(endpoint, method string, data []byte) (body []byte, err error) {
@@ -51,11 +51,17 @@ func reqEndpoint(endpoint, method string, data []byte) (body []byte, err error) 
 func main() {
 	c := comment.Comment{
 		Text:   "Wow what a cool article!",
-		Parent: -1,
+		Parent: 0,
 	}
 
 	bytes, _ := json.Marshal(c)
 
 	reqEndpoint(url_comment_new, "POST", bytes)
-	reqEndpoint(url_comment_list, "GET", nil)
+	bytes, _ = reqEndpoint(url_comment_list, "GET", nil)
+
+	var cms comment.Comment
+
+	json.Unmarshal(bytes, &cms)
+
+	fmt.Println(&cms)
 }
