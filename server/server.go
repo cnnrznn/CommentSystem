@@ -34,6 +34,7 @@ func NewCommentServer() *CommentServer {
 	cs := CommentServer{
 		tree: make(map[int]*comment.Comment),
 	}
+	cs.tree[0] = &comment.Comment{}
 
 	return &cs
 }
@@ -81,6 +82,11 @@ func (s *CommentServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 func (s *CommentServer) New(c comment.Comment) {
+	if _, ok := s.tree[c.Parent]; !ok {
+		log.Println("Parent doesn't exist in tree")
+		return
+	}
+
 	newId := 0
 	for {
 		if _, ok := s.tree[newId]; !ok {
@@ -92,11 +98,6 @@ func (s *CommentServer) New(c comment.Comment) {
 	c.Id = newId
 	c.Score = 1
 
-	if _, ok := s.tree[c.Parent]; ok {
-		s.tree[c.Parent].AddChild(&c)
-	} else {
-		c.Parent = -1
-	}
-
+	s.tree[c.Parent].AddChild(&c)
 	s.tree[newId] = &c
 }
