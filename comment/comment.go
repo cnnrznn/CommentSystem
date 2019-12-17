@@ -2,6 +2,7 @@ package comment
 
 import (
 	"fmt"
+	"sync"
 )
 
 type Comment struct {
@@ -10,12 +11,13 @@ type Comment struct {
 	Id       int        `json:"id"`
 	Children []*Comment `json:"children"`
 	Score    int        `json:"score"`
+	mux      sync.Mutex
 }
 
 func (c *Comment) AddChild(child *Comment) {
-	// TODO lock mutex
+	c.mux.Lock()
 	c.Children = append(c.Children, child)
-	// TODO unlock mutex
+	c.mux.Unlock()
 }
 
 func (c *Comment) String() string {
