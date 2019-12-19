@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 
 	"github.com/cnnrznn/comment/comment"
@@ -49,19 +50,29 @@ func reqEndpoint(endpoint, method string, data []byte) (body []byte, err error) 
 }
 
 func main() {
+	var cms comment.Comment
+	var newId comment.Id
+
 	c := comment.Comment{
 		Text:   "Wow what a cool article!",
 		Parent: 0,
 	}
 
-	bytes, _ := json.Marshal(c)
+	ids := []int{0}
 
-	reqEndpoint(url_comment_new, "POST", bytes)
-	bytes, _ = reqEndpoint(url_comment_list, "GET", nil)
+	for i := 0; i < 50; i++ {
+		bytes, _ := json.Marshal(c)
 
-	var cms comment.Comment
+		bytes, _ = reqEndpoint(url_comment_new, "POST", bytes)
+		json.Unmarshal(bytes, &newId)
+		// add id to pool of available
+		ids = append(ids, newId.Id)
 
-	json.Unmarshal(bytes, &cms)
+		c.Parent = ids[rand.Intn(len(ids))]
 
-	fmt.Println(&cms)
+		bytes, _ = reqEndpoint(url_comment_list, "GET", nil)
+		json.Unmarshal(bytes, &cms)
+
+		fmt.Println(&cms)
+	}
 }
