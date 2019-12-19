@@ -35,6 +35,7 @@ func NewCommentServer() *CommentServer {
 		tree: make(map[int]*comment.Comment),
 	}
 	cs.tree[0] = &comment.Comment{}
+	cs.tree[0].Text = "<Post text here>"
 
 	return &cs
 }
@@ -51,7 +52,6 @@ func parseComment(req *http.Request) (c comment.Comment, err error) {
 }
 
 func (s *CommentServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	log.Println(req.URL.Path)
 	switch req.URL.Path {
 	case url_new:
 		com, err := parseComment(req)
@@ -59,9 +59,12 @@ func (s *CommentServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			// TODO return error message
 			log.Println("Parsing comment:", err)
 		} else {
-			s.New(com)
-			log.Println(s.tree)
-			// TODO return success message
+			cId := comment.Id{s.New(com)}
+			bytes, err := json.Marshal(cId)
+			if err != nil {
+				log.Println("Marshal-ing id:", err)
+			}
+			w.Write(bytes)
 		}
 	case url_list:
 		key, err := strconv.Atoi(req.URL.Query()["comment_id"][0])
@@ -81,10 +84,12 @@ func (s *CommentServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (s *CommentServer) New(c comment.Comment) {
+func (s *CommentServer) New(c comment.Comment) int {
+	// TODO lock tree for parallel random number generation
+
 	if _, ok := s.tree[c.Parent]; !ok {
 		log.Println("Parent doesn't exist in tree")
-		return
+		return -1
 	}
 
 	newId := 0
@@ -100,4 +105,6 @@ func (s *CommentServer) New(c comment.Comment) {
 
 	s.tree[c.Parent].AddChild(&c)
 	s.tree[newId] = &c
+
+	return newId
 }
