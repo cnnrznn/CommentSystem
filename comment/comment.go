@@ -23,3 +23,7 @@ func (c *Comment) AddChild(child *Comment) {
 func (c *Comment) String() string {
 	return fmt.Sprintf("{%v: \n\t%v\n\t\n}", c.Text, c.Children)
 }
+
+type Id struct {
+	Id int `json:"id"`
+}
